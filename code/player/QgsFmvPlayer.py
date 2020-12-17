@@ -984,10 +984,7 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
         '''
         duration = self.duration
         self.currentInfo = currentInfo
-        
-#         if self.PrecisionTimeStamp != "":
-#             self.lb_prec_ts.setText(self.PrecisionTimeStamp)
-        
+                
         if currentInfo or duration:
 
             totalTime = _seconds_to_time(duration)
@@ -1011,6 +1008,12 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
 
         else:
             tStr = ""
+            
+#         if self.PrecisionTimeStamp != "":
+#             self.lb_prec_ts.setText(self.PrecisionTimeStamp)
+        
+        #Trigger mouse move event to update mouse position
+        self.videoWidget.mouseMoveEvent(None, True)
 
         self.labelDuration.setText(tStr)
 
