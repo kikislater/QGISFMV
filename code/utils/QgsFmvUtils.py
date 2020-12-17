@@ -54,15 +54,12 @@ FrameCenter_lyr = parser['LAYERS']['FrameCenter_lyr']
 dtm_buffer = int(parser['GENERAL']['DTM_buffer_size'])
 ffmpegConf = parser['GENERAL']['ffmpeg']
 
-try:
-    from homography import from_points
-except ImportError:
-    None
 
 try:
     from cv2 import (COLOR_BGR2RGB,
                      cvtColor,
-                     COLOR_GRAY2RGB)
+                     COLOR_GRAY2RGB,
+                     findHomography)
     import numpy as np
 except ImportError:
     None
@@ -175,11 +172,11 @@ class NonBlockingStreamReader:
 # later passed to the metadata decoder.
 class Splitter(threading.Thread):
 
-    def __init__(self, cmds, type="ffmpeg"):
+    def __init__(self, cmds, _type="ffmpeg"):
         self.stdout = None
         self.stderr = None
         self.cmds = cmds
-        self.type = type
+        self.type = _type
         self.p = None
         threading.Thread.__init__(self)
 
@@ -396,8 +393,8 @@ def getVideoFolder(video_file):
 
 def RemoveVideoFolder(filename):
     ''' Remove video temporal folder if exist '''
-    file, _ = os.path.splitext(filename)
-    folder = getVideoFolder(file)
+    f, _ = os.path.splitext(filename)
+    folder = getVideoFolder(f)
     try:
         shutil.rmtree(folder, ignore_errors=True)
     except Exception:
@@ -661,12 +658,13 @@ def SetGCPsToGeoTransform(cornerPointUL, cornerPointUR, cornerPointLR, cornerPoi
     geotransform_affine = gdal.GCPsToGeoTransform(gcps)
 
     src = np.float64(
-        np.array([[0.0, 0.0], [xSize, 0.0], [xSize, ySize], [0.0, ySize]]))
+        np.array([[0.0, 0.0], [xSize, 0.0], [xSize, ySize], [0.0, ySize], [xSize / 2.0, ySize / 2.0]]))
     dst = np.float64(
-        np.array([cornerPointUL, cornerPointUR, cornerPointLR, cornerPointLL]))
+        np.array([[cornerPointUL[0], cornerPointUL[1]], [cornerPointUR[0], cornerPointUR[1]], [cornerPointLR[0], cornerPointLR[1]], [cornerPointLL[0], cornerPointLL[1]], [frameCenterLat, frameCenterLon]]))
+
 
     try:
-        geotransform = from_points(src, dst)
+        geotransform, _ = findHomography(src, dst)
     except Exception:
         pass
 
@@ -822,8 +820,6 @@ def UpdateLayers(packet, parent=None, mosaic=False, group=None):
     global frameCenterElevation, sensorLatitude, sensorLongitude, sensorTrueAltitude, groupName
 
     groupName = group
-    frameCenterLat = packet.FrameCenterLatitude
-    frameCenterLon = packet.FrameCenterLongitude
     frameCenterElevation = packet.FrameCenterElevation
     sensorLatitude = packet.SensorLatitude
     sensorLongitude = packet.SensorLongitude
@@ -833,8 +829,13 @@ def UpdateLayers(packet, parent=None, mosaic=False, group=None):
 
     UpdatePlatformData(packet, hasElevationModel())
     UpdateTrajectoryData(packet, hasElevationModel())
-    UpdateFrameCenterData(packet, hasElevationModel())
-    UpdateFrameAxisData(packet, hasElevationModel())
+    
+    frameCenterPoint = [packet.FrameCenterLatitude, packet.FrameCenterLongitude, packet.FrameCenterElevation]
+    if hasElevationModel():
+        frameCenterPoint = GetLine3DIntersectionWithDEM(GetSensor(), frameCenterPoint)
+    
+    UpdateFrameCenterData(frameCenterPoint, hasElevationModel())
+    UpdateFrameAxisData(packet.ImageSourceSensor, GetSensor(), frameCenterPoint, hasElevationModel())
 
     if OffsetLat1 is not None and LatitudePoint1Full is None:
         CornerEstimationWithOffsets(packet)
@@ -886,7 +887,7 @@ def UpdateLayers(packet, parent=None, mosaic=False, group=None):
                         cornerPointLR, cornerPointLL, hasElevationModel())
 
         SetGCPsToGeoTransform(cornerPointUL, cornerPointUR,
-                              cornerPointLR, cornerPointLL, frameCenterLon, frameCenterLat, hasElevationModel())
+                              cornerPointLR, cornerPointLL, frameCenterPoint[1], frameCenterPoint[0], hasElevationModel())
 
         if mosaic:
             georeferencingVideo(parent)
@@ -1008,6 +1009,8 @@ def CornerEstimationWithOffsets(packet):
         cornerPointLL = (OffsetLat4 + frameCenterLat,
                          OffsetLon4 + frameCenterLon)
 
+        frameCenterPoint = [packet.FrameCenterLatitude, packet.FrameCenterLongitude, packet.FrameCenterElevation]
+
         if hasElevationModel():
             cornerPointUL = GetLine3DIntersectionWithDEM(
                 GetSensor(), cornerPointUL)
@@ -1025,7 +1028,8 @@ def CornerEstimationWithOffsets(packet):
                         cornerPointLR, cornerPointLL, hasElevationModel())
 
         SetGCPsToGeoTransform(cornerPointUL, cornerPointUR,
-                              cornerPointLR, cornerPointLL, frameCenterLon, frameCenterLat, hasElevationModel())
+                              cornerPointLR, cornerPointLL,
+                              frameCenterPoint[1], frameCenterPoint[0], hasElevationModel())
 
     except Exception:
         return False
@@ -1080,12 +1084,13 @@ def CornerEstimationWithoutOffsets(packet=None, sensor=None, frameCenter=None, F
 #                 "QgsFmvUtils", "Target width unknown, defaults to: " + str(targetWidth) + "m."))
 
         # compute distance to ground
-        if frameCenterElevation != 0:
+        if frameCenterElevation != 0 and sensorTrueAltitude is not None and frameCenterElevation is not None:
             sensorGroundAltitude = sensorTrueAltitude - frameCenterElevation
-        else:
-#             qgsu.showUserAndLogMessage(QCoreApplication.translate(
-#                 "QgsFmvUtils", "Sensor ground elevation narrowed to true altitude: " + str(sensorTrueAltitude) + "m."))
+        elif frameCenterElevation != 0 and sensorTrueAltitude is not None:
             sensorGroundAltitude = sensorTrueAltitude
+        else:
+            #can't compute footprint without sensorGroundAltitude
+            return False                              
 
         if sensorLatitude == 0:
             return False
@@ -1153,6 +1158,8 @@ def CornerEstimationWithoutOffsets(packet=None, sensor=None, frameCenter=None, F
         cornerPointLL = list(
             reversed(sphere.destination(destPoint, distance2, bearing)))
 
+        frameCenterPoint = [packet.FrameCenterLatitude, packet.FrameCenterLongitude, packet.FrameCenterElevation]
+
         if hasElevationModel():
             cornerPointUL = GetLine3DIntersectionWithDEM(
                 GetSensor(), cornerPointUL)
@@ -1174,7 +1181,7 @@ def CornerEstimationWithoutOffsets(packet=None, sensor=None, frameCenter=None, F
 
         SetGCPsToGeoTransform(cornerPointUL, cornerPointUR,
                               cornerPointLR, cornerPointLL,
-                              frameCenterLon, frameCenterLat, hasElevationModel())
+                              frameCenterPoint[1], frameCenterPoint[0], hasElevationModel())
 
     except Exception as e:
         qgsu.showUserAndLogMessage(QCoreApplication.translate(

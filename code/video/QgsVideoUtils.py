@@ -6,6 +6,10 @@ from QGIS_FMV.utils.QgsFmvUtils import (GetImageWidth,
                                         GetFrameCenter,
                                         hasElevationModel,
                                         GetGCPGeoTransform)
+
+from QGIS_FMV.utils.QgsUtils import QgsUtils as qgsu
+from osgeo import gdal
+import numpy as np
 try:
     from pydevd import *
 except ImportError:
@@ -30,10 +34,14 @@ class VideoUtils(object):
     @staticmethod
     def GetInverseMatrix(x, y, gt, surface):
         ''' inverse matrix transformation (lon-lat to video units x,y) '''
-        transf = (~gt)([x, y])
-        scr_x = (transf[0] / VideoUtils.GetXRatio(surface)) + \
+        gt = GetGCPGeoTransform()
+        imagepoint = np.array(np.dot(np.linalg.inv(gt), [x, y, 1]))
+        scalar = imagepoint[2]
+        ximage = imagepoint[0]/scalar
+        yimage = imagepoint[1]/scalar
+        scr_x = (ximage / VideoUtils.GetXRatio(surface)) + \
             VideoUtils.GetXBlackZone(surface)
-        scr_y = (transf[1] / VideoUtils.GetYRatio(surface)) + \
+        scr_y = (yimage / VideoUtils.GetYRatio(surface)) + \
             VideoUtils.GetYBlackZone(surface)
         return scr_x, scr_y
 
@@ -126,14 +134,20 @@ class VideoUtils(object):
         '''Return video coordinates to map coordinates
         @type event: QMouseEvent
         @param event:
-
         @type surface: QAbstractVideoSurface
         @param surface: Abstract video surface
         @return:
         '''
         gt = GetGCPGeoTransform()
-        return gt([(event.x() - VideoUtils.GetXBlackZone(surface)) * VideoUtils.GetXRatio(surface), (event.y() - VideoUtils.GetYBlackZone(surface)) * VideoUtils.GetYRatio(surface)])
-
+        #return gt([(event.x() - VideoUtils.GetXBlackZone(surface)) * VideoUtils.GetXRatio(surface), (event.y() - VideoUtils.GetYBlackZone(surface)) * VideoUtils.GetYRatio(surface)])
+        imagepoint = [(event.x() - VideoUtils.GetXBlackZone(surface)) * VideoUtils.GetXRatio(surface), (event.y() - VideoUtils.GetYBlackZone(surface)) * VideoUtils.GetYRatio(surface), 1]
+        worldpoint = np.array(np.dot(gt, imagepoint))
+        scalar = worldpoint[2]
+        xworld = worldpoint[0]/scalar
+        yworld = worldpoint[1]/scalar
+                
+        return xworld, yworld
+    
     @staticmethod
     def GetPointCommonCoords(event, surface):
         ''' Common functon for get coordinates on mousepressed
