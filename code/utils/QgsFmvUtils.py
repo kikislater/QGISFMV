@@ -1190,6 +1190,24 @@ def CornerEstimationWithoutOffsets(packet=None, sensor=None, frameCenter=None, F
 
     return True
 
+def GetDemAltAt(lon, lat):
+    alt = 0
+   
+    xOrigin = dtm_transform[0]
+    yOrigin = dtm_transform[3]
+    pixelWidth = dtm_transform[1]
+    pixelHeight = -dtm_transform[5]
+    
+    col = int((lon - xOrigin) / pixelWidth)
+    row = int((yOrigin - lat) / pixelHeight)
+    try:
+        alt = dtm_data[row - dtm_rowLowerBound][col - dtm_colLowerBound]
+    except:
+        qgsu.showUserAndLogMessage(
+                "", "GetDemAltAt: Point is out of DEM.", onlyLog=True)
+        
+    return alt
+
 
 def GetLine3DIntersectionWithDEM(sensorPt, targetPt):
     ''' Obtain height for points,intersecting with DEM '''
@@ -1351,7 +1369,7 @@ def BurnDrawingsImage(source, overlay):
     p = QPainter()
     p.setRenderHint(QPainter.HighQualityAntialiasing)
     p.begin(base)
-    p.setCompositionMode(QPainter.CompositionMode_SourceOut)
+    p.setCompositionMode(QPainter.CompositionMode_SourceOver)
     p.drawImage(0, 0, overlay)
     p.end()
 

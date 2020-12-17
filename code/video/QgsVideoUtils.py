@@ -5,6 +5,7 @@ from QGIS_FMV.utils.QgsFmvUtils import (GetImageWidth,
                                         GetLine3DIntersectionWithDEM,
                                         GetFrameCenter,
                                         hasElevationModel,
+                                        GetDemAltAt,
                                         GetGCPGeoTransform)
 
 from QGIS_FMV.utils.QgsUtils import QgsUtils as qgsu
@@ -153,7 +154,6 @@ class VideoUtils(object):
         ''' Common functon for get coordinates on mousepressed
         @type event: QMouseEvent
         @param event:
-
         @type surface: QAbstractVideoSurface
         @param surface: Abstract video surface
         @return:
@@ -161,16 +161,13 @@ class VideoUtils(object):
         transf = VideoUtils.GetTransf(event, surface)
         targetAlt = GetFrameCenter()[2]
 
-        Longitude = float(round(transf[1], 5))
-        Latitude = float(round(transf[0], 5))
+        Longitude = float(round(transf[1], 7))
+        Latitude = float(round(transf[0], 7))
         Altitude = float(round(targetAlt, 0))
-
+        
         if hasElevationModel():
-            sensor = GetSensor()
             target = [transf[0], transf[1], targetAlt]
-            projPt = GetLine3DIntersectionWithDEM(sensor, target)
-            if projPt:
-                Longitude = float(round(projPt[1], 5))
-                Latitude = float(round(projPt[0], 5))
-                Altitude = float(round(projPt[2], 0))
+            alt = GetDemAltAt(transf[1], transf[0])
+            Altitude = round(alt, 0)            
+
         return Longitude, Latitude, Altitude
