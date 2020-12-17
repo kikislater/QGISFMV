@@ -231,7 +231,7 @@ class FmvManager(QDockWidget, Ui_ManagerWindow):
                     self.VManager.setItem(rowPosition, 4, QTableWidgetItem(
                         QCoreApplication.translate(
                             "ManagerDock", "Start location not available.")))
-                    self.ToggleActiveRow(rowPosition, value="Not MISB")
+                    self.ToggleActiveRow(rowPosition, value="Video not applicable")
                     pbar.setValue(99)
                     return
                 else:
@@ -241,7 +241,7 @@ class FmvManager(QDockWidget, Ui_ManagerWindow):
                 qgsu.showUserAndLogMessage(QCoreApplication.translate(
                     "ManagerDock", "This video don't have Metadata ! "))
                 pbar.setValue(99)
-                self.ToggleActiveRow(rowPosition, value="Not MISB")
+                self.ToggleActiveRow(rowPosition, value="Video not applicable")
                 return
 
             pbar.setValue(90)
