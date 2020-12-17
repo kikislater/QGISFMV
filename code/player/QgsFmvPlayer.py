@@ -86,6 +86,7 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
         self.data = None
         self.staticDraw = False
         self.playbackRateSlow = 0.7
+        self.PrecisionTimeStamp = ""
 
         # Create Draw Toolbar
         self.DrawToolBar.addAction(self.actionMagnifying_glass)
@@ -304,56 +305,53 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
         @param stdout_data: Binary data
         '''
         for packet in StreamParser(stdout_data):
-            try:
-                if isinstance(packet, UnknownElement):
-                    qgsu.showUserAndLogMessage(
-                        "Error interpreting klv data, metadata cannot be read.", "the parser did not recognize KLV data", level=QGis.Warning, onlyLog=True)
-                    continue
-                data = packet.MetadataList()
-                self.data = data
-                if self.metadataDlg.isVisible():  # Only add metadata to table if this QDockWidget is visible (speed plugin)
-                    self.addMetadata(data)
-                try:
-                    UpdateLayers(packet, parent=self,
-                                 mosaic=self.createingMosaic, group=self.fileName)
-                except Exception:
-                    None
+            if isinstance(packet, UnknownElement):
+                qgsu.showUserAndLogMessage(
+                    "Error interpreting klv data, metadata cannot be read.", "the parser did not recognize KLV data", level=QGis.Warning, onlyLog=True)
+                continue
+            data = packet.MetadataList()
+            self.data = data
+            if self.metadataDlg.isVisible():  # Only add metadata to table if this QDockWidget is visible (speed plugin)
+                self.addMetadata(data)
+            res = UpdateLayers(packet, parent=self, mosaic=self.createingMosaic, group=self.fileName)
+            if res:
+                for key in sorted(data.keys()):
+                    #qgsu.showUserAndLogMessage("", "key:"+ str(key) + " value:" +  str(data[key][0]))
+                    if str(data[key][0]) == "Precision Time Stamp":
+                        self.PrecisionTimeStamp = str(data[key][1].split(".")[0])
                 QApplication.processEvents()
-                return
-            except Exception as e:
-                qgsu.showUserAndLogMessage("", "QgsFmvPlayer packetStreamParser failed! : " + str(e), onlyLog=True)
+                break
 
-    def callBackMetadata(self, currentTime, nextTime):
-        '''Metadata CallBack Streaming
+    def callMetadataSync(self, currentTime, nextTime, klv_index=0):
+        '''Metadata Sync Call
         @type currentTime: String
         @param currentTime: Current timestamp
-
         @type nextTime: String
         @param nextTime: Next timestamp
         '''
         try:
-
-            port = int(self.fileName.split(':')[2])
-            t = callBackMetadataThread(cmds=['-i', self.fileName.replace(str(port), str(port + 1)),
+            fName = self.fileName
+            if self.isStreaming:
+                port = int(self.fileName.split(':')[2])
+                fName = self.fileName.replace(str(port), str(port + 1))
+            
+            p = _spawn(cmds=['-i', fName ,
                                              '-ss', currentTime,
                                              '-to', nextTime,
-                                             '-map', '0:d',
+                                             '-map', '0:d:'+str(klv_index),
                                              '-preset', 'ultrafast',
                                              '-f', 'data', '-'])
-            t.start()
-            t.join(1)
-            if t.is_alive():
-                t.p.terminate()
-                t.join()
+            stdout_data, _ = p.communicate()
 
-            if t.stdout == b'':
+            if stdout_data == b'':
+                qgsu.showUserAndLogMessage("", "CallMetadataSync returned no data for precise positioning.", onlyLog=True)
                 return
-
-            self.packetStreamParser(t.stdout)
+            
+            self.packetStreamParser(stdout_data)
 
         except Exception as e:
             qgsu.showUserAndLogMessage(QCoreApplication.translate(
-                "QgsFmvPlayer", "Metadata Callback Failed! : "), str(e))
+                "QgsFmvPlayer", "Metadata Sync Call Failed : "), str(e))
 
     def readLocal(self, currentInfo):
         ''' Read Local Metadata ,klv files'''
@@ -979,13 +977,17 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
 
         self.updateDurationInfo(progress)
 
-    def updateDurationInfo(self, currentInfo):
+    def updateDurationInfo(self, currentInfo, isPrecise=False):
         '''Update labels duration Info and CallBack Metadata
         @type currentInfo: String
         @param currentInfo: Current time value
         '''
         duration = self.duration
         self.currentInfo = currentInfo
+        
+#         if self.PrecisionTimeStamp != "":
+#             self.lb_prec_ts.setText(self.PrecisionTimeStamp)
+        
         if currentInfo or duration:
 
             totalTime = _seconds_to_time(duration)
@@ -996,12 +998,13 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
             if self.isStreaming:
                 # get last metadata available
                 self.get_metadata_from_buffer()
-                # qgsu.showUserAndLogMessage("", "Streaming on ", onlyLog=True)
-                # nextTime = currentInfo + self.pass_time / 1000
-                # nextTimeInfo = _seconds_to_time_frac(nextTime)
-                # self.callBackMetadata(currentTimeInfo, nextTimeInfo)
             elif self.islocal:
                 self.readLocal(currentInfo)
+            elif isPrecise:
+                nextTime = currentInfo + self.pass_time / 1000
+                nextTimeInfo = _seconds_to_time_frac(nextTime)
+                if self.meta_reader is not None:
+                    self.callMetadataSync(currentTimeInfo, nextTimeInfo, self.meta_reader.klv_index)
             else:
                 # Get Metadata from buffer
                 self.get_metadata_from_buffer(currentTimeInfo)

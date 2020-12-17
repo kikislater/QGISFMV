@@ -50,6 +50,9 @@ class Fmv:
         """ Contructor """
 
         self.run_once = False
+        self.minimised = False
+        self.lowerIcon = QIcon(":/imgFMV/images/lower.png")
+        self.raiseIcon = QIcon(":/imgFMV/images/raise.png")
         self.iface = iface
         log.initLogging()
         threadcount = QThread.idealThreadCount()
