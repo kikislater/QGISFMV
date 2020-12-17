@@ -75,6 +75,9 @@ class FmvManager(QDockWidget, Ui_ManagerWindow):
         self.VManager.setColumnWidth(4, 300)
         self.VManager.verticalHeader().setDefaultAlignment(Qt.AlignHCenter)
         self.VManager.hideColumn(0)
+        
+        self.videoPlayable = []
+        self.videoIsStreaming = []
 
         # Get Video Manager List
         VideoList = getVideoManagerList()

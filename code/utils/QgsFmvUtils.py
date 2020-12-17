@@ -764,6 +764,8 @@ def _spawn(cmds, t="ffmpeg"):
 
     cmds.insert(3, '-preset')
     cmds.insert(4, 'ultrafast')
+    
+    qgsu.showUserAndLogMessage("", "Command:" + str(cmds), onlyLog=True)
 
     return subprocess.Popen(cmds, shell=windows, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             bufsize=0,
