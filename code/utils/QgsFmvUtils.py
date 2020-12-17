@@ -431,6 +431,7 @@ def getVideoLocationInfo(videoPath, islocal=False, klv_folder=None):
                         '-f', 'data', '-'])
 
             stdout_data, _ = p.communicate()
+            qgsu.showUserAndLogMessage("Video Loc info raw result", stdout_data, onlyLog=True)
 
         if stdout_data == b'':
             return
@@ -622,12 +623,12 @@ def SetGCPsToGeoTransform(cornerPointUL, cornerPointUR, cornerPointLR, cornerPoi
 
     global gcornerPointUL, gcornerPointUR, gcornerPointLR, gcornerPointLL, gframeCenterLat, gframeCenterLon, geotransform_affine, geotransform
 
-    # TEMP FIX : If have elevation the geotransform is wrong
-    if ele:
-        del cornerPointUL[-1]
-        del cornerPointUR[-1]
-        del cornerPointLR[-1]
-        del cornerPointLL[-1]
+#     # TEMP FIX : If have elevation the geotransform is wrong
+#     if ele:
+#         del cornerPointUL[-1]
+#         del cornerPointUR[-1]
+#         del cornerPointLR[-1]
+#         del cornerPointLL[-1]
         
     gcornerPointUL = cornerPointUL
     gcornerPointUR = cornerPointUR
