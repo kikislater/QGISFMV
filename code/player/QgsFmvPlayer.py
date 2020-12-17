@@ -525,7 +525,11 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
                                        QCoreApplication.translate("QgsFmvPlayer", "Options"))
         actionOptions.triggered.connect(self.OpenOptions)
 
-        menu.exec_(self.mapToGlobal(point))
+        if not self.videoWidget.isFullScreen():
+            menu.exec_(self.mapToGlobal(point))
+        else:
+            scr = QApplication.desktop().screenNumber(self)
+            menu.exec_(QPoint(point.x() + scr * QApplication.desktop().screenGeometry(scr).width(), point.y()))
 
     def rateChanged(self, qreal):   
         '''Signals the playbackRate has changed to rate.
