@@ -47,17 +47,31 @@
     background-color: transparent;
 }</string>
       </property>
+
       <widget class="QMenu" name="menuFile">
        <property name="title">
         <string>Fi&amp;le</string>
        </property>
-       <addaction name="actionOpen_Stream"/>
+       <addaction name="mOpenStream"/>
        <addaction name="separator"/>
-       <addaction name="actionOpen_MPEG2_File"/>
+       <addaction name="mOpenMPEGButton"/>
        <addaction name="separator"/>
-       <addaction name="actionCreate_MISB_File"/>
+       <addaction name="mActionCreateMISBButton"/>
        <addaction name="separator"/>
        <addaction name="CloseButton"/>
+      </widget>
+      <widget class="QLabel" name="versionlabel">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>17</width>
+         <height>33</height>
+        </rect>
+       </property>
+       <property name="versionlabel" stdset="0">
+        <string>v 1.10</string>
+       </property>
       </widget>
       <addaction name="menuFile"/>
      </widget>
@@ -191,7 +205,7 @@ color: rgb(56, 95, 107);
     </item>
    </layout>
   </widget>
-  <action name="actionOpen_Stream">
+  <action name="mOpenStream">
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/imgFMV/images/stream.png</normaloff>:/imgFMV/images/stream.png</iconset>
@@ -200,7 +214,7 @@ color: rgb(56, 95, 107);
     <string>&amp;Open Stream (experimental)</string>
    </property>
   </action>
-  <action name="actionOpen_MPEG2_File">
+  <action name="mOpenMPEGButton">
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/imgFMV/images/misb-file.png</normaloff>:/imgFMV/images/misb-file.png</iconset>
@@ -209,7 +223,7 @@ color: rgb(56, 95, 107);
     <string>Open &amp;Video File</string>
    </property>
   </action>
-  <action name="actionCreate_MISB_File">
+  <action name="mActionCreateMISBButton">
    <property name="icon">
     <iconset resource="resources.qrc">
      <normaloff>:/imgFMV/images/multiplexer.png</normaloff>:/imgFMV/images/multiplexer.png</iconset>
@@ -227,13 +241,18 @@ color: rgb(56, 95, 107);
     <string>C&amp;lose</string>
    </property>
   </action>
+  <action name="actionlabel">
+   <property name="text">
+    <string>label</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="resources.qrc"/>
  </resources>
  <connections>
   <connection>
-   <sender>actionOpen_Stream</sender>
+   <sender>mOpenStream</sender>
    <signal>triggered()</signal>
    <receiver>ManagerWindow</receiver>
    <slot>openStreamDialog()</slot>
@@ -265,7 +284,7 @@ color: rgb(56, 95, 107);
    </hints>
   </connection>
   <connection>
-   <sender>actionOpen_MPEG2_File</sender>
+   <sender>mOpenMPEGButton</sender>
    <signal>triggered()</signal>
    <receiver>ManagerWindow</receiver>
    <slot>openVideoFileDialog()</slot>
@@ -281,7 +300,7 @@ color: rgb(56, 95, 107);
    </hints>
   </connection>
   <connection>
-   <sender>actionCreate_MISB_File</sender>
+   <sender>mActionCreateMISBButton</sender>
    <signal>triggered()</signal>
    <receiver>ManagerWindow</receiver>
    <slot>openMuiltiplexorDialog()</slot>

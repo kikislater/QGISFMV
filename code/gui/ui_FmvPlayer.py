@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_PlayerWindow(object):
     def setupUi(self, PlayerWindow):
         PlayerWindow.setObjectName("PlayerWindow")
-        PlayerWindow.resize(748, 652)
+        PlayerWindow.resize(971, 822)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -105,6 +105,13 @@ class Ui_PlayerWindow(object):
         self.labelDuration.setText("")
         self.labelDuration.setObjectName("labelDuration")
         self.horizontalLayout_2.addWidget(self.labelDuration)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.lb_prec_ts = QtWidgets.QLabel(self.centralwidget)
+        self.lb_prec_ts.setText("")
+        self.lb_prec_ts.setObjectName("lb_prec_ts")
+        self.horizontalLayout_4.addWidget(self.lb_prec_ts)
+        self.horizontalLayout_2.addLayout(self.horizontalLayout_4)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox.setObjectName("groupBox")
@@ -294,7 +301,7 @@ class Ui_PlayerWindow(object):
         self.verticalLayout.addWidget(self.gb_PlayerControls)
         PlayerWindow.setCentralWidget(self.centralwidget)
         self.menubarwidget = QtWidgets.QMenuBar(PlayerWindow)
-        self.menubarwidget.setGeometry(QtCore.QRect(0, 0, 748, 26))
+        self.menubarwidget.setGeometry(QtCore.QRect(0, 0, 971, 39))
         self.menubarwidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.menubarwidget.setStyleSheet("QMenuBar {\n"
 "    background-color: transparent;\n"

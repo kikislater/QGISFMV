@@ -70,15 +70,25 @@ class FmvManager(QDockWidget, Ui_ManagerWindow):
                                  triggered=self.remove)
 
         self.VManager.setColumnWidth(1, 150)
-        self.VManager.setColumnWidth(2, 80)
-        self.VManager.setColumnWidth(3, 300)
-        self.VManager.setColumnWidth(4, 300)
+        self.VManager.setColumnWidth(2, 140)
+        self.VManager.setColumnWidth(3, 250)
+        self.VManager.setColumnWidth(4, 150)
+        self.VManager.setColumnWidth(5, 130)                                    
         self.VManager.verticalHeader().setDefaultAlignment(Qt.AlignHCenter)
         self.VManager.hideColumn(0)
         
         self.videoPlayable = []
         self.videoIsStreaming = []
+        
+        self.loadVideosFromSettings()
+        
+        self.dtm_path = parser['GENERAL']['DTM_file']
 
+        draw.setValues()
+        #self.setAcceptDrops(True)       
+
+    def loadVideosFromSettings(self):
+        
         # Get Video Manager List
         VideoList = getVideoManagerList()
         for load_id in VideoList:
@@ -88,12 +98,12 @@ class FmvManager(QDockWidget, Ui_ManagerWindow):
             folder = getVideoFolder(filename)
             klv_folder = os.path.join(folder, "klv")
             exist = os.path.exists(klv_folder)
+                        
             if exist:
                 self.AddFileRowToManager(name, filename, load_id, exist, klv_folder)
             else:
-                self.AddFileRowToManager(name, filename, load_id)
-
-        draw.setValues()
+                if os.path.isfile(filename):
+                    self.AddFileRowToManager(name, filename, load_id)
 
     def eventFilter(self, source, event):
         ''' Event Filter '''

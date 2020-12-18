@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>748</width>
-    <height>652</height>
+    <width>971</width>
+    <height>822</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -230,6 +230,17 @@
          <string/>
         </property>
        </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="lb_prec_ts">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -719,8 +730,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>748</width>
-     <height>26</height>
+     <width>971</width>
+     <height>39</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">

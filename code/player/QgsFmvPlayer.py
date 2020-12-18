@@ -1013,8 +1013,8 @@ class QgsFmvPlayer(QMainWindow, Ui_PlayerWindow):
         else:
             tStr = ""
             
-#         if self.PrecisionTimeStamp != "":
-#             self.lb_prec_ts.setText(self.PrecisionTimeStamp)
+        if self.PrecisionTimeStamp != "":
+            self.lb_prec_ts.setText(self.PrecisionTimeStamp)
         
         #Trigger mouse move event to update mouse position
         self.videoWidget.mouseMoveEvent(None, True)
